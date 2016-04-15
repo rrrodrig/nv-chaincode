@@ -57,15 +57,13 @@ type FinancialInst struct {
 
 type Transaction struct {
 	RefNumber   string   `json:"refNumber"`
-	OpCode 		string   `json:"opCode"`
-	VDate 		string   `json:"vDate"`
-	Currency  	string   `json:"currency"`
+	Date 		string   `json:"date"`
+	Description string   `json:"description"`
+	Type 		string   `json:"type"`
 	Amount    	float64  `json:"amount"`
-	Sender		string   `json:"sender"`
-	Receiver	string   `json:"receiver"`
-	OrdCust		string   `json:"ordcust"`
-	BenefCust	string   `json:"benefcust"`
-	DetCharges  string   `json:"detcharges"`
+	To			string   `json:"to"`
+	From		string   `json:"from"`
+	Contract	string   `json:"contract"`
 	StatusCode	int 	 `json:"statusCode"`
 	StatusMsg	string   `json:"statusMsg"`
 }
@@ -284,11 +282,11 @@ func (t *SimpleChaincode) getTxs(stub *shim.ChaincodeStub, finInst string)([]byt
 
 	for i := range txs.Transactions{
 
-		if txs.Transactions[i].Sender == finInst{
+		if txs.Transactions[i].From == finInst{
 			res.Transactions = append(res.Transactions, txs.Transactions[i])
 		}
 
-		if txs.Transactions[i].Receiver == finInst{
+		if txs.Transactions[i].To == finInst{
 			res.Transactions = append(res.Transactions, txs.Transactions[i])
 		}
 
@@ -312,8 +310,8 @@ func (t *SimpleChaincode) getTxs(stub *shim.ChaincodeStub, finInst string)([]byt
 	// VDate 		string   `json:"vDate"`
 	// Currency  	string   `json:"currency"`
 	// Amount    	float64  `json:"amount"`
-	// Sender		string   `json:"sender"`
-	// Receiver	string   `json:"receiver"`
+	// From		string   `json:"From"`
+	// To	string   `json:"To"`
 	// OrdCust		string   `json:"ordcust"`
 	// BenefCust	string   `json:"benefcust"`
 	// DetCharges  string   `json:"detcharges"`
@@ -327,17 +325,15 @@ func (t *SimpleChaincode) submitTx(stub *shim.ChaincodeStub, args []string) ([]b
 		fmt.Println("Incorrect number of arguments. Expecting 10 - MT103 format")
 		return nil, errors.New("Incorrect number of arguments. Expecting 10 - MT103 format")
 	}
-
+															
 	var tx Transaction
 	tx.RefNumber 	= args[0]
-	tx.OpCode 		= args[1]
-	tx.VDate 		= args[2]
-	tx.Currency 	= args[3]
-	tx.Sender 		= args[5]
-	tx.Receiver 	= args[6]
-	tx.OrdCust 		= args[7]
-	tx.BenefCust 	= args[8]
-	tx.DetCharges 	= args[9]
+	tx.Date 		= args[1]
+	tx.Description 	= args[2]
+	tx.Type 	    = args[3]
+	tx.To 			= args[5]
+	tx.From 		= args[6]
+	tx.Contract 	= args[7]
 	tx.StatusCode 	= 1
 	tx.StatusMsg 	= "Transaction Completed"
 
@@ -347,90 +343,6 @@ func (t *SimpleChaincode) submitTx(stub *shim.ChaincodeStub, args []string) ([]b
 		tx.StatusMsg = "Invalid Amount"
 	}else{
 		tx.Amount = amountValue
-	}
-
-	// Check Nostro Account
-	rfidBytes, err := stub.GetState(tx.Receiver)
-	if err != nil {
-		return nil, errors.New("SubmitTx Failed to get Financial Institution")
-	}
-	var rfid FinancialInst
-	fmt.Println("SubmitTx Unmarshalling Financial Institution");
-	err = json.Unmarshal(rfidBytes, &rfid)
-
-	found := false
-	amountSent := 0.0
-	for i := range rfid.Accounts{
-
-		if rfid.Accounts[i].Holder == tx.Sender{
-			fmt.Println("SubmitTx Find Sender Nostro Account");
-			found = true
-			fxRate, err := getFXRate(tx.Currency,rfid.Accounts[i].Currency)
-			fmt.Println("SubmitTx Get FX Rate " + FloatToString(fxRate));
-			//Transaction currency invalid
-			if(err != nil){
-				tx.StatusCode = 0
-				tx.StatusMsg = "Invalid Currency"
-				break
-			}
-
-			amountSent = tx.Amount * fxRate 
-			fmt.Println("SubmitTx Amount To Send " + FloatToString(amountSent));
-			if(rfid.Accounts[i].CashBalance-amountSent<0){
-				tx.StatusCode = 0
-				tx.StatusMsg = "Insufficient funds on Nostro Account"
-				break
-			}		
-		}
-	}
-
-	if(!found){
-		tx.StatusCode = 0
-		tx.StatusMsg = "Nostro Account for " + tx.Sender + " doesn't exist in " + tx.Receiver
-	}
-
-	//Check Vostro Account
-	sfidBytes, err := stub.GetState(tx.Sender)
-	if err != nil {
-		return nil, errors.New("SubmitTx Failed to get Financial Institution")
-	}
-	var sfid FinancialInst
-	fmt.Println("SubmitTx Unmarshalling Financial Institution");
-	err = json.Unmarshal(sfidBytes, &sfid)
-
-	found = false
-	for i := range sfid.Accounts{
-
-		if sfid.Accounts[i].Holder == tx.Receiver{
-			fmt.Println("SubmitTx Find Vostro Account");
-			found = true
-			
-			if(sfid.Accounts[i].Currency != tx.Currency){
-				tx.StatusCode = 0
-				tx.StatusMsg =  tx.Receiver + " doesn't have an account in " + tx.Currency + " with " + tx.Sender
-				break
-			}
-		}
-	}
-
-	if(!found){
-		tx.StatusCode = 0
-		tx.StatusMsg = "Vostro Account for " + tx.Receiver + " doesn't exist in " + tx.Sender
-	}
-	
-	if(tx.StatusCode == 1){
-		//Credit and debit Accounts
-		fmt.Println("SubmitTx Credit Vostro Account");
-		_,err = t.creditVostroAccount(stub, tx.Sender, tx.Receiver, tx.Amount)
-		if err != nil {
-			return nil, errors.New("SubmitTx Failed to Credit Vostro Account")
-		}
-
-		fmt.Println("SubmitTx Debit Nostro Account");
-		_,err = t.debitNostroAccount(stub, tx.Sender, tx.Receiver, amountSent)
-		if err != nil {
-			return nil, errors.New("SubmitTx Failed to Debit Nostro Account")
-		}
 	}
 
 	//get the AllTransactions index
