@@ -87,7 +87,7 @@ type AllUsers struct{
 }
 
 type NVAccounts struct {
-	Nostro 		[]FinancialInst `json:"nostro"`
+	User 		[]User `json:"user"`
 	Vostro 		[]FinancialInst `json:"vostro"`
 }
 
@@ -254,36 +254,29 @@ func (t *SimpleChaincode) getNVAccounts(stub *shim.ChaincodeStub, finInst string
 	fmt.Println("Start find getNVAccounts")
 	fmt.Println("Looking for " + finInst);
 
-	//get the finInst index
-	fdAsBytes, err := stub.GetState(finInst)
+	//get the User index
+	fdAsBytes, err := stub.GetState("Natalie")
 	if err != nil {
 		return nil, errors.New("Failed to get Financial Institution")
 	}
 
-	var fd FinancialInst
+	var fd User
 	json.Unmarshal(fdAsBytes, &fd)
 
 	var res NVAccounts
-	res.Vostro = append(res.Vostro, fd)
-
-	for i := range fd.Accounts{
-
-		fdrAsBytes, err := stub.GetState(fd.Accounts[i].Holder)
-		if err != nil {
-			return nil, errors.New("Failed to get Financial Institution")
-		}
-		var fdr FinancialInst
-		json.Unmarshal(fdrAsBytes, &fdr)
-
-		for x := range fdr.Accounts{
-			if(fdr.Accounts[x].Holder == finInst){
-				var nfd FinancialInst
-				nfd.Owner = fdr.Owner
-				nfd.Accounts = append(nfd.Accounts, fdr.Accounts[x])
-				res.Nostro = append(res.Nostro, nfd)
-			}
-		}
+	res.User = append(res.User, fd)
+	
+	
+	//get the finInst index
+	fdAsBytes, err = stub.GetState("BANKA")
+	if err != nil {
+		return nil, errors.New("Failed to get Financial Institution")
 	}
+
+	var fin FinancialInst
+	json.Unmarshal(fdAsBytes, &fin)
+
+	res.Vostro = append(res.Vostro, fin)
 
 	resAsBytes, _ := json.Marshal(res)
 
