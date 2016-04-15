@@ -38,6 +38,7 @@ const EURUSD = 1.10
 const USDEUR = 0.90
 const AUDEUR = 0.67
 const EURAUD = 1.48
+const TESTCONV= 1.13
 
 // SimpleChaincode example simple Chaincode implementation
 type SimpleChaincode struct {
