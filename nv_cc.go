@@ -68,8 +68,22 @@ type Transaction struct {
 	StatusMsg	string   `json:"statusMsg"`
 }
 
+
+type User struct {
+	Name   		string   `json:"Name"`
+	Balance 	string   `json:"Balance"`
+	Status      string 	 `json:"status"`
+	Expiration  string   `json:"expiration"`
+	Join		string   `json:"join"`
+	Modified	string   `json:"from"`
+}
+
 type AllTransactions struct{
 	Transactions []Transaction `json:"transactions"`
+}
+
+type AllUsers struct{
+	User []User `json:"users"`
 }
 
 type NVAccounts struct {
@@ -84,6 +98,17 @@ func (t *SimpleChaincode) init(stub *shim.ChaincodeStub, args []string) ([]byte,
 
 	var err error
 
+	// Natalie
+	var natalie User
+	natalie.Name = "Natalie"
+	natalie.Balance = "1000"
+	natalie.Status  = "Platinum"
+	natalie.Expiration = "June"
+	natalie.Join  = "January"
+	natalie.Modified = "Today"
+	
+
+	
 	//BANK A
 	var fid FinancialInst
 	fid.Owner = BANKA
