@@ -71,7 +71,7 @@ type Transaction struct {
 
 type User struct {
 	Name   		string   `json:"Name"`
-	Balance 	string   `json:"Balance"`
+	Balance 	float64  `json:"Balance"`
 	Status      string 	 `json:"status"`
 	Expiration  string   `json:"expiration"`
 	Join		string   `json:"join"`
@@ -101,13 +101,18 @@ func (t *SimpleChaincode) init(stub *shim.ChaincodeStub, args []string) ([]byte,
 	// Natalie
 	var natalie User
 	natalie.Name = "Natalie"
-	natalie.Balance = "1000"
+	natalie.Balance = 1000
 	natalie.Status  = "Platinum"
 	natalie.Expiration = "June"
 	natalie.Join  = "January"
 	natalie.Modified = "Today"
 	
-
+	jsonAsBytes, _ := json.Marshal(natalie)
+	err = stub.PutState(natalie.Name, jsonAsBytes)								
+	if err != nil {
+		fmt.Println("Error Creating initial user account")
+		return nil, err
+	}
 	
 	//BANK A
 	var fid FinancialInst
@@ -124,7 +129,7 @@ func (t *SimpleChaincode) init(stub *shim.ChaincodeStub, args []string) ([]byte,
 	actAC.CashBalance = 360000.00
 	fid.Accounts = append(fid.Accounts, actAC)
 
-	jsonAsBytes, _ := json.Marshal(fid)
+	jsonAsBytes, _ = json.Marshal(fid)
 	err = stub.PutState("BANKA", jsonAsBytes)								
 	if err != nil {
 		fmt.Println("Error creating account "+BANKA)
@@ -370,18 +375,64 @@ func (t *SimpleChaincode) submitTx(stub *shim.ChaincodeStub, args []string) ([]b
 		tx.Amount = amountValue
 	}
 
+	
+	
+	// Get Sender account from BC
+	rfidBytes, err := stub.GetState(tx.From)
+	if err != nil {
+		return nil, errors.New("SubmitTx Failed to get Financial Institution")
+	}
+	var sender FinancialInst
+	fmt.Println("SubmitTx Unmarshalling Financial Institution");
+	err = json.Unmarshal(rfidBytes, &sender)
+	
+	
+	// Get Receiver account from BC
+	rfidBytes, err = stub.GetState(tx.To)
+	if err != nil {
+		return nil, errors.New("SubmitTx Failed to get User from BC")
+	}
+	var receiver User
+	fmt.Println("SubmitTx Unmarshalling User Struct");
+	err = json.Unmarshal(rfidBytes, &receiver)
+	
+	
+	
+	receiver.Balance = receiver.Balance  + tx.Amount
+	sender.Accounts[0].CashBalance   = sender.Accounts[0].CashBalance  - tx.Amount
+	
+	
+	
+	//Commit Sender to ledger
+	fmt.Println("SubmitTx Commit Updated Sender To Ledger");
+	txsAsBytes, _ := json.Marshal(sender)
+	err = stub.PutState(tx.From, txsAsBytes)	
+	if err != nil {
+		return nil, err
+	}
+	
+	//Commit Receiver to ledger
+	fmt.Println("SubmitTx Commit Updated Sender To Ledger");
+	txsAsBytes, _ = json.Marshal(receiver)
+	err = stub.PutState(tx.To, txsAsBytes)	
+	if err != nil {
+		return nil, err
+	}
+	
+
+	
 	//get the AllTransactions index
 	allTxAsBytes, err := stub.GetState("allTx")
 	if err != nil {
 		return nil, errors.New("SubmitTx Failed to get all Transactions")
 	}
-
+	
 	//Commit transaction to ledger
 	fmt.Println("SubmitTx Commit Transaction To Ledger");
 	var txs AllTransactions
 	json.Unmarshal(allTxAsBytes, &txs)
 	txs.Transactions = append(txs.Transactions, tx)
-	txsAsBytes, _ := json.Marshal(txs)
+	txsAsBytes, _ = json.Marshal(txs)
 	err = stub.PutState("allTx", txsAsBytes)	
 	if err != nil {
 		return nil, err
