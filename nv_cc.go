@@ -367,68 +367,16 @@ func (t *SimpleChaincode) getTxs(stub *shim.ChaincodeStub, finInst string)([]byt
 // ============================================================================================================================
 func (t *SimpleChaincode) submitTx(stub *shim.ChaincodeStub, args []string) ([]byte, error) {
 
-	var err error
-	fmt.Println("Running submitTx")
-
-	if len(args) != 10 {
-		fmt.Println("Incorrect number of arguments. Expecting 10 - MT103 format")
-		return nil, errors.New("Incorrect number of arguments. Expecting 10 - MT103 format")
-	}
-															
-	var tx Transaction
-	tx.RefNumber 	= args[0]
-	tx.Date 		= args[1]
-	tx.Description 	= args[2]
-	tx.Type 	    = args[3]
-	tx.To 			= args[5]
-	tx.From 		= args[6]
-	tx.Contract 	= args[7]
-	tx.StatusCode 	= 1
-	tx.StatusMsg 	= "Transaction Completed"
-
-	amountValue, err := strconv.ParseFloat(args[4], 64)
-	if err != nil {
-		tx.StatusCode = 0
-		tx.StatusMsg = "Invalid Amount"
-	}else{
-		tx.Amount = amountValue
-	}
-
-	
-	
-	// Get Sender account from BC
-	rfidBytes, err := stub.GetState(tx.From)
-	if err != nil {
-		return nil, errors.New("SubmitTx Failed to get Financial Institution")
-	}
-	var sender FinancialInst
-	fmt.Println("SubmitTx Unmarshalling Financial Institution");
-	err = json.Unmarshal(rfidBytes, &sender)
-	
-	
+			//***************************************************************
 	// Get Receiver account from BC
-	rfidBytes, err = stub.GetState("Natalie")
+	rfidBytes, err := stub.GetState("Natalie")
 	if err != nil {
 		return nil, errors.New("SubmitTx Failed to get User from BC")
 	}
 	var receiver User
 	fmt.Println("SubmitTx Unmarshalling User Struct");
 	err = json.Unmarshal(rfidBytes, &receiver)
-	
-	
-	
 	receiver.Balance = receiver.Balance  + 500
-	//sender.Accounts[0].CashBalance   = sender.Accounts[0].CashBalance  - tx.Amount
-	
-	
-	
-	//Commit Sender to ledger
-	//fmt.Println("SubmitTx Commit Updated Sender To Ledger");
-	//txsAsBytes, _ := json.Marshal(sender)
-	//err = stub.PutState(tx.From, txsAsBytes)	
-	//if err != nil {
-	//	return nil, err
-	//}
 	
 	//Commit Receiver to ledger
 	fmt.Println("SubmitTx Commit Updated Sender To Ledger");
@@ -438,26 +386,9 @@ func (t *SimpleChaincode) submitTx(stub *shim.ChaincodeStub, args []string) ([]b
 		return nil, err
 	}
 	
-
 	
-	//get the AllTransactions index
-	//allTxAsBytes, err := stub.GetState("allTx")
-	//if err != nil {
-	//	return nil, errors.New("SubmitTx Failed to get all Transactions")
-	//}
-	
-	//Commit transaction to ledger
-	//fmt.Println("SubmitTx Commit Transaction To Ledger");
-	//var txs AllTransactions
-	//json.Unmarshal(allTxAsBytes, &txs)
-	//txs.Transactions = append(txs.Transactions, tx)
-	//txsAsBytes, _ = json.Marshal(txs)
-	//err = stub.PutState("allTx", txsAsBytes)	
-	//if err != nil {
-	//	return nil, err
-	//}
-
 	return nil, nil
+	//***********************************************************************
 }
 
 func (t *SimpleChaincode) creditVostroAccount(stub *shim.ChaincodeStub, sender string, receiver string, amount float64) ([]byte, error) {
