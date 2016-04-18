@@ -367,7 +367,31 @@ func (t *SimpleChaincode) getTxs(stub *shim.ChaincodeStub, finInst string)([]byt
 // ============================================================================================================================
 func (t *SimpleChaincode) submitTx(stub *shim.ChaincodeStub, args []string) ([]byte, error) {
 
-			//***************************************************************
+	fmt.Println("Running submitTx")
+	
+	
+	var tx Transaction
+	tx.RefNumber 	= args[0]
+	tx.Date 		= args[1]
+	tx.Description 	= args[2]
+	tx.Type 	    = args[3]
+	tx.To 			= args[5]
+	tx.From 		= args[6]
+	tx.Contract 	= args[7]
+	tx.StatusCode 	= 1
+	tx.StatusMsg 	= "Transaction Completed"
+	
+	
+	amountValue, err := strconv.ParseFloat(args[4], 64)
+	if err != nil {
+		tx.StatusCode = 0
+		tx.StatusMsg = "Invalid Amount"
+	}else{
+		tx.Amount = amountValue
+	}
+	
+	
+	//***************************************************************
 	// Get Receiver account from BC
 	rfidBytes, err := stub.GetState("Natalie")
 	if err != nil {
@@ -376,7 +400,7 @@ func (t *SimpleChaincode) submitTx(stub *shim.ChaincodeStub, args []string) ([]b
 	var receiver User
 	fmt.Println("SubmitTx Unmarshalling User Struct");
 	err = json.Unmarshal(rfidBytes, &receiver)
-	receiver.Balance = receiver.Balance  + 500
+	receiver.Balance = receiver.Balance  + tx.Amount
 	
 	//Commit Receiver to ledger
 	fmt.Println("SubmitTx Commit Updated Sender To Ledger");
