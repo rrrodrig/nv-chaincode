@@ -410,6 +410,24 @@ func (t *SimpleChaincode) submitTx(stub *shim.ChaincodeStub, args []string) ([]b
 		return nil, err
 	}
 	
+	// Get Sender account from BC
+	rfidBytes, err = stub.GetState(tx.From)
+	if err != nil {
+		return nil, errors.New("SubmitTx Failed to get Financial Institution")
+	}
+	var sender FinancialInst
+	fmt.Println("SubmitTx Unmarshalling Financial Institution");
+	err = json.Unmarshal(rfidBytes, &sender)
+	sender.Accounts[0].CashBalance   = sender.Accounts[0].CashBalance  - tx.Amount
+	
+	//Commit Sender to ledger
+	fmt.Println("SubmitTx Commit Updated Sender To Ledger");
+	txsAsBytes, _ = json.Marshal(sender)
+	err = stub.PutState(tx.From, txsAsBytes)	
+	if err != nil {
+		return nil, err
+	}
+	
 	
 	return nil, nil
 	//***********************************************************************
