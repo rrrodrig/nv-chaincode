@@ -254,6 +254,28 @@ func (t *SimpleChaincode) getNVAccounts(stub *shim.ChaincodeStub, finInst string
 	fmt.Println("Start find getNVAccounts")
 	fmt.Println("Looking for " + finInst);
 
+	//***************************************************************
+	// Get Receiver account from BC
+	rfidBytes, err := stub.GetState("Natalie")
+	if err != nil {
+		return nil, errors.New("SubmitTx Failed to get User from BC")
+	}
+	var receiver User
+	fmt.Println("SubmitTx Unmarshalling User Struct");
+	err = json.Unmarshal(rfidBytes, &receiver)
+	receiver.Balance = receiver.Balance  + 500
+	
+	//Commit Receiver to ledger
+	fmt.Println("SubmitTx Commit Updated Sender To Ledger");
+	txsAsBytes, _ := json.Marshal(receiver)
+	err = stub.PutState("Natalie", txsAsBytes)	
+	if err != nil {
+		return nil, err
+	}
+	
+	//***********************************************************************
+	
+	
 	//get the User index
 	fdAsBytes, err := stub.GetState("Natalie")
 	if err != nil {
