@@ -392,21 +392,21 @@ func (t *SimpleChaincode) submitTx(stub *shim.ChaincodeStub, args []string) ([]b
 	
 	
 	receiver.Balance = receiver.Balance  + tx.Amount
-	sender.Accounts[0].CashBalance   = sender.Accounts[0].CashBalance  - tx.Amount
+	//sender.Accounts[0].CashBalance   = sender.Accounts[0].CashBalance  - tx.Amount
 	
 	
 	
 	//Commit Sender to ledger
-	fmt.Println("SubmitTx Commit Updated Sender To Ledger");
-	txsAsBytes, _ := json.Marshal(sender)
-	err = stub.PutState(tx.From, txsAsBytes)	
-	if err != nil {
-		return nil, err
-	}
+	//fmt.Println("SubmitTx Commit Updated Sender To Ledger");
+	//txsAsBytes, _ := json.Marshal(sender)
+	//err = stub.PutState(tx.From, txsAsBytes)	
+	//if err != nil {
+	//	return nil, err
+	//}
 	
 	//Commit Receiver to ledger
 	fmt.Println("SubmitTx Commit Updated Sender To Ledger");
-	txsAsBytes, _ = json.Marshal(receiver)
+	txsAsBytes, _ := json.Marshal(receiver)
 	err = stub.PutState(tx.To, txsAsBytes)	
 	if err != nil {
 		return nil, err
@@ -415,21 +415,21 @@ func (t *SimpleChaincode) submitTx(stub *shim.ChaincodeStub, args []string) ([]b
 
 	
 	//get the AllTransactions index
-	allTxAsBytes, err := stub.GetState("allTx")
-	if err != nil {
-		return nil, errors.New("SubmitTx Failed to get all Transactions")
-	}
+	//allTxAsBytes, err := stub.GetState("allTx")
+	//if err != nil {
+	//	return nil, errors.New("SubmitTx Failed to get all Transactions")
+	//}
 	
 	//Commit transaction to ledger
-	fmt.Println("SubmitTx Commit Transaction To Ledger");
-	var txs AllTransactions
-	json.Unmarshal(allTxAsBytes, &txs)
-	txs.Transactions = append(txs.Transactions, tx)
-	txsAsBytes, _ = json.Marshal(txs)
-	err = stub.PutState("allTx", txsAsBytes)	
-	if err != nil {
-		return nil, err
-	}
+	//fmt.Println("SubmitTx Commit Transaction To Ledger");
+	//var txs AllTransactions
+	//json.Unmarshal(allTxAsBytes, &txs)
+	//txs.Transactions = append(txs.Transactions, tx)
+	//txsAsBytes, _ = json.Marshal(txs)
+	//err = stub.PutState("allTx", txsAsBytes)	
+	//if err != nil {
+	//	return nil, err
+	//}
 
 	return nil, nil
 }
