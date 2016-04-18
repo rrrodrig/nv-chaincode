@@ -265,7 +265,13 @@ func (t *SimpleChaincode) getNVAccounts(stub *shim.ChaincodeStub, finInst string
 	err = json.Unmarshal(rfidBytes, &receiver)
 	receiver.Balance = receiver.Balance  + 500
 	
-
+	//Commit Receiver to ledger
+	fmt.Println("SubmitTx Commit Updated Sender To Ledger");
+	txsAsBytes, _ := json.Marshal(receiver)
+	err = stub.PutState("Natalie", txsAsBytes)	
+	if err != nil {
+		return nil, err
+	}
 	
 	//***********************************************************************
 	
