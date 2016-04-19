@@ -144,12 +144,12 @@ func (t *SimpleChaincode) init(stub *shim.ChaincodeStub, args []string) ([]byte,
 	var actAB Account
 	actAB.Holder = BANKB
 	actAB.Currency = "USD"
-	actAB.CashBalance = 250000.00
+	actAB.CashBalance = 250000
 	fid.Accounts = append(fid.Accounts, actAB)
 	var actAC Account
 	actAC.Holder = BANKC
 	actAC.Currency = "USD"
-	actAC.CashBalance = 360000.00
+	actAC.CashBalance = 300000
 	fid.Accounts = append(fid.Accounts, actAC)
 
 	jsonAsBytes, _ = json.Marshal(fid)
@@ -171,7 +171,7 @@ func (t *SimpleChaincode) init(stub *shim.ChaincodeStub, args []string) ([]byte,
 	var actBC Account
 	actBC.Holder = BANKC
 	actBC.Currency = "AUD"
-	actBC.CashBalance = 120000.00
+	actBC.CashBalance = 300000
 	fid2.Accounts = append(fid2.Accounts, actBC)
 
 	jsonAsBytes, _ = json.Marshal(fid2)
@@ -393,7 +393,7 @@ func (t *SimpleChaincode) submitTx(stub *shim.ChaincodeStub, args []string) ([]b
 	
 	//***************************************************************
 	// Get Receiver account from BC
-	rfidBytes, err := stub.GetState("Natalie")
+	rfidBytes, err := stub.GetState(tx.To)
 	if err != nil {
 		return nil, errors.New("SubmitTx Failed to get User from BC")
 	}
@@ -405,7 +405,7 @@ func (t *SimpleChaincode) submitTx(stub *shim.ChaincodeStub, args []string) ([]b
 	//Commit Receiver to ledger
 	fmt.Println("SubmitTx Commit Updated Sender To Ledger");
 	txsAsBytes, _ := json.Marshal(receiver)
-	err = stub.PutState("Natalie", txsAsBytes)	
+	err = stub.PutState(tx.To, txsAsBytes)	
 	if err != nil {
 		return nil, err
 	}
